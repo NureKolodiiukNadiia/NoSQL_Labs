@@ -73,7 +73,13 @@ public class DbSchemaCreateOrValidateService
     private async Task CreateWorkspacesCollectionAsync()
     {
         const string name = "workspaces";
-        if (await CollectionExists(name)) return;
+        if (await CollectionExists(name))
+        {
+            var collection1 =  _db.GetCollection<WorkSpace>(name);
+            await collection1.Indexes.CreateOneAsync(Builders<WorkSpace>.IndexKeys.Geo2DSphere(space => space.Location));
+
+            return;
+        }
 
         var options = new CreateCollectionOptions<WorkSpace>
         {
@@ -97,7 +103,7 @@ public class DbSchemaCreateOrValidateService
                                     "Amenities",
                                     new BsonDocument
                                     {
-                                        { "bsonType", "array" },
+                                        { "bsonType", "array, null" },
                                         { "items", new BsonDocument { { "bsonType", "string" } } }
                                     }
                                 },
@@ -116,7 +122,7 @@ public class DbSchemaCreateOrValidateService
 
         await collection.Indexes.CreateOneAsync(Builders<WorkSpace>.IndexKeys.Text(space => space.Name));
         await collection.Indexes.CreateOneAsync(Builders<WorkSpace>.IndexKeys.Ascending(space => space.Amenities));
-        await collection.Indexes.CreateOneAsync(Builders<WorkSpace>.IndexKeys.Geo2D(space => space.Location));
+        await collection.Indexes.CreateOneAsync(Builders<WorkSpace>.IndexKeys.Geo2DSphere(space => space.Location));
     }
 
     private async Task CreateUsersCollectionAsync()

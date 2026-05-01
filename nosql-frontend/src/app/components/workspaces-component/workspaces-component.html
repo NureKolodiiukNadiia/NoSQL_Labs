@@ -1,0 +1,92 @@
+<div class="section">
+  <h2>Workspaces</h2>
+
+  <div class="card">
+    <h3>Workspace CRUD</h3>
+    <div class="form-group">
+      <button (click)="loadWorkspaces()">Load Workspaces</button>
+      <button (click)="deleteSelectedWorkspace()" [disabled]="!selectedWorkspace">Delete Selected</button>
+    </div>
+    <ag-grid-angular
+      class="ag-theme-quartz"
+      style="width: 100%; height: 300px;"
+      [rowData]="workspaces()"
+      [columnDefs]="workspaceColumnDefs"
+      [rowSelection]="'single'"
+      (selectionChanged)="onSelectWorkspace($event)">
+    </ag-grid-angular>
+    <div class="form-group">
+      <input [(ngModel)]="createWorkspaceModel.name" placeholder="Name"/>
+      <input [(ngModel)]="createWorkspaceModel.spaceType" type="number" placeholder="Space Type"/>
+      <input [(ngModel)]="createWorkspaceModel.hourlyRate" type="number" placeholder="Hourly Rate"/>
+      <input [(ngModel)]="createWorkspaceModel.capacity" type="number" placeholder="Capacity"/>
+      <input [(ngModel)]="createWorkspaceModel.isActive" type="checkbox"/>
+      <button (click)="createWorkspace()">Create</button>
+      <button (click)="updateWorkspace()" [disabled]="!selectedWorkspace">Update Selected</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Find By Name Pattern</h3>
+    <div class="form-group">
+      <input [(ngModel)]="workspacePattern" placeholder="Name pattern"/>
+      <button (click)="findByNamePattern()">Search</button>
+    </div>
+    @if (foundWorkspaces().length > 0) {
+      <div class="result">
+        @for (ws of foundWorkspaces(); track ws.id) {
+          <p>{{ ws.name }} - {{ ws.isActive ? 'Active' : 'Inactive' }}</p>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="card">
+    <h3>Deactivate Matching Text</h3>
+    <div class="form-group">
+      <input [(ngModel)]="deactivateText" placeholder="Text to match"/>
+      <button (click)="deactivateMatching()">Deactivate</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Append Text to Workspace Name</h3>
+    <div class="form-group">
+      <input [(ngModel)]="appendWorkspaceId" placeholder="Workspace ID"/>
+      <input [(ngModel)]="appendSuffix" placeholder="Suffix"/>
+      <button (click)="appendTextToWorkspace()">Append</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Append Text to Multiple By Name Pattern</h3>
+    <div class="form-group">
+      <input [(ngModel)]="multiPattern" placeholder="Name pattern"/>
+      <input [(ngModel)]="multiSuffix" placeholder="Suffix"/>
+      <button (click)="appendTextMultiple()">Append to Multiple</button>
+    </div>
+    @if (updatedCount() !== null) {
+      <p class="message">Updated {{ updatedCount() }} workspaces</p>
+    }
+  </div>
+
+  <div class="card">
+    <h3>Find Near Location</h3>
+    <div class="form-group">
+      <input [(ngModel)]="locationX" type="number" placeholder="Longitude"/>
+      <input [(ngModel)]="locationY" type="number" placeholder="Latitude"/>
+      <input [(ngModel)]="radiusKm" type="number" placeholder="Radius (km)"/>
+      <button (click)="findNearLocation()">Search</button>
+    </div>
+    @if (nearWorkspaces().length > 0) {
+      <div class="result">
+        @for (ws of nearWorkspaces(); track ws.id) {
+          <p>{{ ws.name }}</p>
+        }
+      </div>
+    }
+  </div>
+  @if (workspaceMessage()) {
+    <p class="message">{{ workspaceMessage() }}</p>
+  }
+</div>

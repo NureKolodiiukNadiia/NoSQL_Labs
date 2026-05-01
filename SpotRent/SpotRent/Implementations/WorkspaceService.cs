@@ -1,6 +1,7 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.GeoJsonObjectModel;
+using SpotRent.Dto;
 using SpotRent.Entities;
 using SpotRent.Interfaces;
 using SpotRent.Data;
@@ -15,6 +16,87 @@ public sealed class WorkspaceService : IWorkspaceService
     public WorkspaceService(MongoDbContext db)
     {
         _workspaces = db.Workspaces;
+    }
+
+    public async Task<Result> CreateWorkspaceAsync(CreateWorkspaceRequest request, CancellationToken ct)
+    {
+        var workspace = new WorkSpace(
+            ObjectId.GenerateNewId(),
+            request.Name,
+            request.SpaceType,
+            request.HourlyRate,
+            request.Capacity,
+            request.Amenities,
+            request.Location,
+            request.IsActive);
+
+        await _workspaces.InsertOneAsync(workspace, ct);
+        return Result.Success();
+    }
+
+    public async Task<Result<IEnumerable<WorkSpaceDto>>> GetWorkspacesAsync(CancellationToken ct)
+    {
+        var workspaces = await _workspaces.Find(FilterDefinition<WorkSpace>.Empty).ToListAsync(ct);
+        return Result.Success(workspaces.Select(w =>
+            new WorkSpaceDto(
+                w.Id.ToString(),
+                w.Name,
+                w.SpaceType,
+                w.HourlyRate,
+                w.Capacity,
+                w.Amenities,
+                w.Location,
+                w.IsActive)));
+    }
+
+    public async Task<Result<WorkSpaceDto>> GetWorkspaceAsync(ObjectId id, CancellationToken ct)
+    {
+        var w = await _workspaces.Find(w => w.Id == id).FirstOrDefaultAsync(ct);
+        if (w is null)
+        {
+            return Result.Fail<WorkSpaceDto>("Workspace not found");
+        }
+
+        WorkSpaceDto dto = new WorkSpaceDto(w.Id.ToString(),
+            w.Name,
+            w.SpaceType,
+            w.HourlyRate,
+            w.Capacity,
+            w.Amenities,
+            w.Location,
+            w.IsActive);
+        return Result.Success(dto);
+    }
+
+    public async Task<Result> UpdateWorkspaceAsync(ObjectId id, CreateWorkspaceRequest request, CancellationToken ct)
+    {
+        var update = Builders<WorkSpace>.Update
+            .Set(w => w.Name, request.Name)
+            .Set(w => w.SpaceType, request.SpaceType)
+            .Set(w => w.HourlyRate, request.HourlyRate)
+            .Set(w => w.Capacity, request.Capacity)
+            .Set(w => w.Amenities, request.Amenities ?? new List<string>())
+            .Set(w => w.Location, request.Location)
+            .Set(w => w.IsActive, request.IsActive);
+
+        var result = await _workspaces.UpdateOneAsync(w => w.Id == id, update, cancellationToken: ct);
+        if (result.MatchedCount == 0)
+        {
+            return Result.Fail("Workspace not found");
+        }
+
+        return Result.Success();
+    }
+
+    public async Task<Result> DeleteWorkspaceAsync(ObjectId id, CancellationToken ct)
+    {
+        var result = await _workspaces.DeleteOneAsync(w => w.Id == id, ct);
+        if (result.DeletedCount == 0)
+        {
+            return Result.Fail("Workspace not found");
+        }
+
+        return Result.Success();
     }
 
     public async Task<Result> DeactivateWorkspacesMatchingTextAsync(string textMatch, CancellationToken ct)
@@ -116,7 +198,7 @@ public sealed class WorkspaceService : IWorkspaceService
                 return Result.Fail<int>("Update operation was not acknowledged by MongoDB.");
             }
 
-            return Result.Success<int>((int)result.ModifiedCount);
+            return Result.Success((int)result.ModifiedCount);
         }
         catch (Exception ex)
         {
@@ -124,7 +206,8 @@ public sealed class WorkspaceService : IWorkspaceService
         }
     }
 
-    public async Task<Result<IEnumerable<WorkSpace>>> FindWorkspacesByNamePatternAsync(string pattern, CancellationToken ct)
+    public async Task<Result<IEnumerable<WorkSpace>>> FindWorkspacesByNamePatternAsync(string pattern,
+        CancellationToken ct)
     {
         try
         {

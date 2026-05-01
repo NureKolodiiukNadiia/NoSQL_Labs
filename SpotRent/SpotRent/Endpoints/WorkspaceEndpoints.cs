@@ -12,11 +12,88 @@ public static class WorkspaceEndpoints
     {
         var group = routes.MapGroup("/api/workspaces").WithTags("Workspaces");
 
+        group.MapPost("", CreateWorkspaceAsync);
+        group.MapGet("", GetWorkspacesAsync);
+        group.MapGet("{id}", GetWorkspaceByIdAsync);
+        group.MapPut("{id}", UpdateWorkspaceAsync);
+        group.MapDelete("{id}", DeleteWorkspaceAsync);
         group.MapPatch("/deactivate", DeactivateMatchingTextAsync);
         group.MapPatch("/append-name", AppendTextAsync);
         group.MapPatch("/append-name-by-pattern", AppendTextToMultipleAsync);
-        group.MapGet("/near", FindWorkspacesNearLocationAsync);
+        group.MapPost("/near", FindWorkspacesNearLocationAsync);
         group.MapGet("/by-pattern", FindByPatternAsync);
+    }
+
+    private static async Task<IResult> CreateWorkspaceAsync(IWorkspaceService svc, [FromBody] CreateWorkspaceRequest request,
+        CancellationToken ct)
+    {
+        var res = await svc.CreateWorkspaceAsync(request, ct);
+
+        return res.IsSuccess switch
+        {
+            true => Results.NoContent(),
+            _ => Results.BadRequest(res.Error)
+        };
+    }
+
+    private static async Task<IResult> GetWorkspacesAsync(IWorkspaceService svc, CancellationToken ct)
+    {
+        var res = await svc.GetWorkspacesAsync(ct);
+
+        return res.IsSuccess switch
+        {
+            true => Results.Ok(res.Value),
+            _ => Results.BadRequest(res.Error)
+        };
+    }
+
+    private static async Task<IResult> GetWorkspaceByIdAsync(IWorkspaceService svc, string id, CancellationToken ct)
+    {
+        if (!ObjectId.TryParse(id, out var objectId))
+        {
+            return Results.BadRequest("Invalid Workspace ID format.");
+        }
+
+        var res = await svc.GetWorkspaceAsync(objectId, ct);
+
+        return res.IsSuccess switch
+        {
+            true => Results.Ok(res.Value),
+            _ => Results.BadRequest(res.Error)
+        };
+    }
+
+    private static async Task<IResult> UpdateWorkspaceAsync(IWorkspaceService svc, string id, [FromBody] CreateWorkspaceRequest request,
+        CancellationToken ct)
+    {
+        if (!ObjectId.TryParse(id, out var objectId))
+        {
+            return Results.BadRequest("Invalid Workspace ID format.");
+        }
+
+        var res = await svc.UpdateWorkspaceAsync(objectId, request, ct);
+
+        return res.IsSuccess switch
+        {
+            true => Results.NoContent(),
+            _ => Results.BadRequest(res.Error)
+        };
+    }
+
+    private static async Task<IResult> DeleteWorkspaceAsync(IWorkspaceService svc, string id, CancellationToken ct)
+    {
+        if (!ObjectId.TryParse(id, out var objectId))
+        {
+            return Results.BadRequest("Invalid Workspace ID format.");
+        }
+
+        var res = await svc.DeleteWorkspaceAsync(objectId, ct);
+
+        return res.IsSuccess switch
+        {
+            true => Results.NoContent(),
+            _ => Results.BadRequest(res.Error)
+        };
     }
 
     private static async Task<IResult> FindWorkspacesNearLocationAsync(IWorkspaceService svc,

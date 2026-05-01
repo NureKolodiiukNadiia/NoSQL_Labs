@@ -1,0 +1,22 @@
+<div class="admin-container">
+
+  <div class="tabs">
+    <button [class.active]="activeTab() === 'users'" (click)="activeTab.set('users')">Users</button>
+    <button [class.active]="activeTab() === 'workspaces'" (click)="activeTab.set('workspaces')">Workspaces</button>
+    <button [class.active]="activeTab() === 'bookings'" (click)="activeTab.set('bookings')">Bookings</button>
+  </div>
+
+  <div class="tab-content">
+    @switch (activeTab()) {
+      @case ('users') {
+        <app-users-component></app-users-component>
+      }
+      @case ('workspaces') {
+        <app-workspaces-component></app-workspaces-component>
+      }
+      @case ('bookings') {
+        <app-bookings-component></app-bookings-component>
+      }
+    }
+  </div>
+</div>

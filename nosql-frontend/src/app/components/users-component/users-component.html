@@ -1,0 +1,57 @@
+<div class="section">
+  <h2>Users</h2>
+
+  <div class="card">
+    <h3>User CRUD</h3>
+    <div class="form-group">
+      <button (click)="loadUsers()">Load Users</button>
+      <button (click)="deleteSelectedUser()" [disabled]="!selectedUser">Delete Selected</button>
+    </div>
+    <ag-grid-angular
+      class="ag-theme-quartz"
+      style="width: 100%; height: 280px;"
+      [rowData]="users()"
+      [columnDefs]="userColumnDefs"
+      [rowSelection]="'single'"
+      (selectionChanged)="onSelectUser($event)">
+    </ag-grid-angular>
+    <div class="form-group">
+      <input [(ngModel)]="updateUserModel.email" placeholder="Email"/>
+      <input [(ngModel)]="updateUserModel.password" placeholder="Password"/>
+      <input [(ngModel)]="updateUserModel.firstName" placeholder="First Name"/>
+      <input [(ngModel)]="updateUserModel.lastName" placeholder="Last Name"/>
+      <button (click)="updateUser()" [disabled]="!selectedUser">Update Selected</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Create User</h3>
+    <div class="form-group">
+      <input [(ngModel)]="newUser.email" placeholder="Email"/>
+      <input [(ngModel)]="newUser.password" type="password" placeholder="Password"/>
+      <input [(ngModel)]="newUser.firstName" placeholder="First Name"/>
+      <input [(ngModel)]="newUser.lastName" placeholder="Last Name"/>
+      <button (click)="createUser()">Create User</button>
+    </div>
+
+  </div>
+
+  <div class="card">
+    <h3>Get User By ID</h3>
+    <div class="form-group">
+      <input [(ngModel)]="userId" placeholder="User ID"/>
+      <button (click)="getUser()">Get User</button>
+    </div>
+    @if (retrievedUser()) {
+      <div class="result">
+        <p><strong>ID:</strong> {{ retrievedUser()?.id }}</p>
+        <p><strong>Email:</strong> {{ retrievedUser()?.email }}</p>
+        <p><strong>Name:</strong> {{ retrievedUser()?.firstName }} {{ retrievedUser()?.lastName }}</p>
+      </div>
+    }
+  </div>
+
+  @if (userMessage()) {
+    <p class="message">{{ userMessage() }}</p>
+  }
+</div>

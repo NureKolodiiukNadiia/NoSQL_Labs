@@ -1,12 +1,11 @@
-using MongoDB.Bson;
 using SpotRent.Enums;
 
 namespace SpotRent.Dto;
 
 public record BookingDto(
-    ObjectId Id,
-    ObjectId WorkspaceId,
-    ObjectId UserId,
+    string Id,
+    string WorkspaceId,
+    string UserId,
     DateTime StartTime,
     DateTime EndTime,
     decimal TotalAmount,

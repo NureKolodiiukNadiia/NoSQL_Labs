@@ -1,9 +1,9 @@
 using MongoDB.Bson;
 using MongoDB.Driver;
 using SpotRent.Entities;
-using SpotRent.Enums;
 using SpotRent.Interfaces;
 using SpotRent.Data;
+using SpotRent.Dto;
 using SpotRent.Models;
 
 namespace SpotRent.Implementations;
@@ -19,12 +19,67 @@ public sealed class BookingService : IBookingService
         _users = db.Users;
     }
 
-    public async Task<Result> CreateBookingAsync(ObjectId userId, ObjectId workspaceId, CancellationToken ct)
+    public async Task<Result> CreateBookingAsync(CreateBookingDto dto, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
-        var booking = new Booking(ObjectId.GenerateNewId(), workspaceId, userId, DateTime.UtcNow,
-            DateTime.UtcNow.AddHours(2), 50.0m, BookingStatus.Confirmed);
+        var booking = new Booking(ObjectId.GenerateNewId(), dto.WorkspaceId, dto.UserId, dto.StartTime,
+            dto.EndTime, dto.TotalAmount, dto.Status);
         await _bookings.InsertOneAsync(booking, ct);
+
+        return Result.Success();
+    }
+
+    public async Task<Result<IEnumerable<BookingDto>>> GetBookingsAsync(CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        var bookings = await _bookings.Find(FilterDefinition<Booking>.Empty)
+            .Project(b => new BookingDto(b.Id.ToString(), b.WorkspaceId.ToString(), b.UserId.ToString(), b.StartTime, b.EndTime, b.TotalAmount, b.Status))
+            .ToListAsync(ct);
+        return Result.Success<IEnumerable<BookingDto>>(bookings);
+    }
+
+    public async Task<Result<BookingDto>> GetBookingAsync(ObjectId id, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        var booking = await _bookings.Find(b => b.Id == id)
+            .Project(b => new BookingDto(b.Id.ToString(), b.WorkspaceId.ToString(), b.UserId.ToString(), b.StartTime, b.EndTime, b.TotalAmount, b.Status))
+            .FirstOrDefaultAsync(ct);
+        if (booking is null)
+        {
+            return Result.Fail<BookingDto>("Booking not found");
+        }
+
+        return Result.Success(booking);
+    }
+
+    public async Task<Result> UpdateBookingAsync(ObjectId id, CreateBookingDto dto, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        var update = Builders<Booking>.Update
+            .Set(b => b.WorkspaceId, dto.WorkspaceId)
+            .Set(b => b.UserId, dto.UserId)
+            .Set(b => b.StartTime, dto.StartTime)
+            .Set(b => b.EndTime, dto.EndTime)
+            .Set(b => b.TotalAmount, dto.TotalAmount)
+            .Set(b => b.Status, dto.Status);
+
+        var result = await _bookings.UpdateOneAsync(b => b.Id == id, update, cancellationToken: ct);
+        if (result.MatchedCount == 0)
+        {
+            return Result.Fail("Booking not found");
+        }
+
+        return Result.Success();
+    }
+
+    public async Task<Result> DeleteBookingAsync(ObjectId id, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        var result = await _bookings.DeleteOneAsync(b => b.Id == id, ct);
+        if (result.DeletedCount == 0)
+        {
+            return Result.Fail("Booking not found");
+        }
 
         return Result.Success();
     }
@@ -37,7 +92,7 @@ public sealed class BookingService : IBookingService
                 new BsonDocument
                 {
                     { "from", "bookings" },
-                    { "let", new BsonDocument("userId", "$Id") },
+                    { "let", new BsonDocument("userId", "$_id") },
                     {
                         "pipeline", new BsonArray
                         {

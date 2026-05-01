@@ -39,3 +39,13 @@ public record WorkSpace
     [BsonIgnoreIfNull]
     public bool? IsActive { get; init; }
 }
+
+public record WorkSpaceDto(
+    string Id,
+    string Name,
+    SpaceType SpaceType,
+    decimal HourlyRate,
+    int? Capacity = null,
+    IEnumerable<string>? Amenities = null,
+    GeoJsonPoint<GeoJson2DCoordinates>? Location = null,
+    bool? IsActive = null);
