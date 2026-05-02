@@ -4,6 +4,7 @@ using SpotRent.Data;
 using SpotRent.Extensions;
 using SpotRent.Implementations;
 using SpotRent.Interfaces;
+using SpotRent.Middleware;
 
 DotEnv.Load();
 var builder = WebApplication.CreateBuilder(args);
@@ -24,6 +25,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+app.UseMiddleware<ExceptionHandlerMiddleware>();
 app.UseCors(b => b.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
 app.MapUserEndpoints();
 app.MapWorkspaceEndpoints();
